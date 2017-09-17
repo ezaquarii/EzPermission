@@ -27,10 +27,26 @@ intended code when permission is available.
 1. Handles only 1 permission at a time
 2. focused on permission handling logic - doesn't contain any UI code
 
-# Integration - sample
+# Integration
 
-Provided sample is written in Kotlin and requires Android Studio 3. The library
-however is written in plain vanilla Java.
+## Dependencies
+
+Add my private bintray repository in your root `build.gradle`:
+
+    allprojects {
+        repositories {
+            ...
+            maven {
+                url "https://dl.bintray.com/ezaquarii/android"
+            }
+        }
+    }
+    
+In module `build.gradle`, add a dependency:
+    
+    compile ('com.ezaquarii:ezpermission:1.0.1') {
+        exclude group: 'com.android.support'
+    }
 
 ## Modeless
 

@@ -1,1 +1,1 @@
-include ':sample-kotlin', ':ezpermission-library'
+include ':sample-kotlin', ':library'
