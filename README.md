@@ -1,5 +1,7 @@
 # EzPermission
 
+Go straight to [Changelog](CHANGELOG.md).
+
 Handling dynamic permissions on Android is a major PITA, mainly due to the braindead API
 design.
 
@@ -24,7 +26,7 @@ intended code when permission is available.
 
 # Limitations
 
-1. Handles only 1 permission at a time
+1. -Handles only 1 permission at a time- it does from v1.1.0
 2. focused on permission handling logic - doesn't contain any UI code
 
 # Integration
@@ -44,7 +46,7 @@ Add my private bintray repository in your root `build.gradle`:
     
 In module `build.gradle`, add a dependency:
     
-    compile ('com.ezaquarii:ezpermission:1.0.1') {
+    compile ('com.ezaquarii:ezpermission:1.1.0') {
         exclude group: 'com.android.support'
     }
 
@@ -61,7 +63,7 @@ camera preview occupies full screen.
         }
 
         private val mInitCamera = EzPermission(this, REQUEST_CAMERA_PERMISSION, false,
-                Manifest.permission.CAMERA,
+                arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE),
                 { onCameraGranted() },
                 { onCameraRationale() },
                 { onCameraDenied() },
@@ -91,7 +93,7 @@ With `EzPermission` this is... well... easy.
         }
     
         private val mRecordAudio = EzPermission(this, REQUEST_AUDIO_PERMISSION, true,
-                Manifest.permission.RECORD_AUDIO,
+                arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE),
                 { onAudioGranted() },
                 { onAudioRationale() },
                 { onAudioPermissionDenied() },

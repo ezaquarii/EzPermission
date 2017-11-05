@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val mInitCamera = EzPermission(this, REQUEST_CAMERA_PERMISSION, false,
-            Manifest.permission.CAMERA,
+            arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE),
             { onCameraGranted() },
             { onCameraRationale() },
             { onCameraDenied() },
@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
     );
 
     private val mRecordAudio = EzPermission(this, REQUEST_AUDIO_PERMISSION, true,
-            Manifest.permission.RECORD_AUDIO,
+            arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE),
             { onAudioGranted() },
             { onAudioRationale() },
             { onAudioPermissionDenied() },

@@ -42,8 +42,8 @@ public class ModelessRequestingTest extends Fixture {
     public void denied() throws Exception {
         when(mCanShowRationale.call()).thenReturn(true);
         mHelper.onRequestPermissionsResult(REQUEST_CODE,
-                new String[] { PERMISSION },
-                new int[] {PackageManager.PERMISSION_DENIED} );
+                PERMISSIONS,
+                new int[] {PackageManager.PERMISSION_DENIED, PackageManager.PERMISSION_DENIED} );
         assertEquals(EzPermission.Fsm.State.RATIONALE, mHelper.getCurrentState());
         verify(mOnDenied, times(1)).run();
         verify(mOnDeniedPermananetly, never()).run();
@@ -54,8 +54,8 @@ public class ModelessRequestingTest extends Fixture {
     public void deniedPermanently() throws Exception {
         when(mCanShowRationale.call()).thenReturn(false);
         mHelper.onRequestPermissionsResult(REQUEST_CODE,
-                new String[] { PERMISSION },
-                new int[] {PackageManager.PERMISSION_DENIED} );
+                PERMISSIONS,
+                new int[] {PackageManager.PERMISSION_DENIED, PackageManager.PERMISSION_DENIED} );
         assertEquals(EzPermission.Fsm.State.DENIED, mHelper.getCurrentState());
         verify(mOnDenied, never()).run();
         verify(mOnDeniedPermananetly, times(1)).run();
@@ -64,11 +64,11 @@ public class ModelessRequestingTest extends Fixture {
 
     @Test
     public void granted() throws Exception {
-        mHelper.setModalRationale(false);
+        mHelper.setIsModalRationale(false);
         when(mCanShowRationale.call()).thenReturn(false);
         mHelper.onRequestPermissionsResult(REQUEST_CODE,
-                new String[] { PERMISSION },
-                new int[] {PackageManager.PERMISSION_GRANTED} );
+                PERMISSIONS,
+                new int[] {PackageManager.PERMISSION_GRANTED, PackageManager.PERMISSION_GRANTED} );
         assertEquals(EzPermission.Fsm.State.GRANTED, mHelper.getCurrentState());
         verify(mOnDenied, never()).run();
         verify(mOnDeniedPermananetly, never()).run();

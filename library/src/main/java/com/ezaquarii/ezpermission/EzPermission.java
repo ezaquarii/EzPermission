@@ -25,12 +25,17 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
- * This helper allows to dispatch an action that requires a permission.
+ * This helper allows to dispatch an action that requires permissions.
  *
  * If permission is not granted, it will handle permission request flow,
  * including rationale and permission re-query.
@@ -71,6 +76,10 @@ public class EzPermission {
     private static final String TAG = EzPermission.class.getSimpleName();
     private static final String EXTRA_INSTANCE_STATE_DEBUG = EzPermission.class.getName() + ".DEGUG";
     private static final String EXTRA_INSTANCE_STATE_FSM_STATE = EzPermission.class.getName() + ".FSM_STATE";
+
+    private interface Predicate<T> {
+        boolean test(T item);
+    }
 
     static class Fsm {
 
@@ -251,11 +260,36 @@ public class EzPermission {
         boolean getDebug() {
             return mDebug;
         }
+
+        private static Callable<Boolean> not(final Callable<Boolean> call) {
+            return new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return !call.call();
+                }
+            };
+        }
+
+        @SafeVarargs
+        private static Callable<Boolean> and(final Callable<Boolean>... calls) {
+            return new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    for(Callable<Boolean> call : calls) {
+                        if(!call.call()) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            };
+        }
     }
 
     private Activity mActivity;
     private int mRequestCode;
-    private String mPermission;
+    private List<String> mPermissions;
+    private List<String> mDeniedPermissions;
     private boolean mIsRationaleModal = false;
 
     private Runnable mOnGrantedAction;
@@ -266,14 +300,22 @@ public class EzPermission {
     private Callable<Boolean> mIsPermissionGrantedGuard = new Callable<Boolean>() {
         @Override
         public Boolean call() throws Exception {
-            return hasPermission(mActivity, mPermission);
+            return hasPermissions(mActivity, mPermissions);
         }
     };
 
     private Callable<Boolean> mCanShowRationaleGuard = new Callable<Boolean>() {
         @Override
         public Boolean call() throws Exception {
-            return ActivityCompat.shouldShowRequestPermissionRationale(mActivity, mPermission) && mOnRationaleAction != null;
+            if(mOnRationaleAction == null) {
+                return false;
+            }
+            return any(mPermissions, new Predicate<String>() {
+                @Override
+                public boolean test(String permission) {
+                    return ActivityCompat.shouldShowRequestPermissionRationale(mActivity, permission);
+                }
+            });
         }
     };
 
@@ -287,7 +329,8 @@ public class EzPermission {
     private Runnable mOnRequestPermissionAction = new Runnable() {
         @Override
         public void run() {
-            ActivityCompat.requestPermissions(mActivity, new String[] {mPermission}, mRequestCode);
+            String[] permissionsArray = mPermissions.toArray(new String[mPermissions.size()]);
+            ActivityCompat.requestPermissions(mActivity, permissionsArray, mRequestCode);
         }
     };
 
@@ -299,39 +342,39 @@ public class EzPermission {
     /**
      * Create permissions helper.
      *
-     * @param activity Activity used to request for a permission
+     * @param activity Activity used to request for a permissions
      * @param requestCode Expected request code; helper will not handle results with invalid request code
-     * @param permission Permission to ask for
+     * @param permissions Permission to ask for
      * @param isRationaleModal True if rationale is modal (like a dialog), false otherwise; consult state machine diagram to see behavioral change
-     * @param onGranted Called when permission is granted
+     * @param onGranted Called when permissions is granted
      * @param onRationale Called when rationale should be shown
-     * @param onDenied Called when permission is denied; permission can be requested again
-     * @param onDeniedPermanantly Called when permission is denied permanently
+     * @param onDenied Called when permissions is denied; permissions can be requested again
+     * @param onDeniedPermanantly Called when permissions is denied permanently
      */
-    public EzPermission(Activity activity, int requestCode, boolean isRationaleModal, String permission, Runnable onGranted, Runnable onRationale, Runnable onDenied, Runnable onDeniedPermanantly) {
-        this(activity, requestCode, isRationaleModal, permission, onGranted, onRationale, onDenied, onDeniedPermanantly, null, null, null);
+    public EzPermission(Activity activity, int requestCode, boolean isRationaleModal, String[] permissions, Runnable onGranted, Runnable onRationale, Runnable onDenied, Runnable onDeniedPermanantly) {
+        this(activity, requestCode, isRationaleModal, permissions, onGranted, onRationale, onDenied, onDeniedPermanantly, null, null, null);
     }
 
     /**
-     * Create permissions helper with custom permission request routine and custom
+     * Create permissions helper with custom permissions request routine and custom
      * rationale check. This is indented to be used in test only.
      *
-     * @param activity Activity used to request for a permission
+     * @param activity Activity used to request for a permissions
      * @param requestCode Expected request code; helper will not handle results with invalid request code
-     * @param permission Permission to ask for
+     * @param permissions Permission to ask for
      * @param isRationaleModal True if rationale is modal (like a dialog), false otherwise; consult state machine diagram to see behavioral change
-     * @param onGranted Called when permission is granted
+     * @param onGranted Called when permissions is granted
      * @param onRationale Called when rationale should be shown
-     * @param onDenied Called when permission is denied; permission can be requested again
-     * @param onDeniedPermanantly Called when permission is denied permanently
-     * @param onRequest Called when permission should be requested; when null, default behaviour will be used
+     * @param onDenied Called when permissions is denied; permissions can be requested again
+     * @param onDeniedPermanantly Called when permissions is denied permanently
+     * @param onRequest Called when permissions should be requested; when null, default behaviour will be used
      * @param canShowRationale Should return true if rationale should be shown, false otherwise; when null, default guard will be used
-     * @param isPermissionGranted Should return true if permission is granted, false otherwise; when null, default guard will be used
+     * @param isPermissionGranted Should return true if permissions is granted, false otherwise; when null, default guard will be used
      */
     public EzPermission(Activity activity,
                         int requestCode,
                         boolean isRationaleModal,
-                        String permission,
+                        String[] permissions,
                         Runnable onGranted,
                         Runnable onRationale,
                         Runnable onDenied,
@@ -340,8 +383,8 @@ public class EzPermission {
                         Callable<Boolean> canShowRationale,
                         Callable<Boolean> isPermissionGranted) {
 
-        mExtraInstanceDebug = String.format("%s:%s", EXTRA_INSTANCE_STATE_DEBUG, permission);
-        mExtraInstanceFsmState = String.format("%s:%s", EXTRA_INSTANCE_STATE_FSM_STATE, permission);
+        mExtraInstanceDebug = createExtraKey(EXTRA_INSTANCE_STATE_DEBUG, permissions);
+        mExtraInstanceFsmState = createExtraKey(EXTRA_INSTANCE_STATE_FSM_STATE, permissions);
 
         if(onRequest != null) {
             mOnRequestPermissionAction = onRequest;
@@ -355,7 +398,7 @@ public class EzPermission {
 
         mActivity = activity;
         mRequestCode = requestCode;
-        mPermission = permission;
+        mPermissions = Arrays.asList(permissions);
         mIsRationaleModal = isRationaleModal;
 
         mOnGrantedAction = onGranted;
@@ -433,7 +476,7 @@ public class EzPermission {
 
     /**
      * Call code that requires permission. If permission is not granted,
-     * state machine will handle the flow to request the permission.
+     * the state machine will handle the flow to request the permission.
      */
     public void call() {
         mFsm.event(Fsm.Event.DISPATCH);
@@ -441,7 +484,7 @@ public class EzPermission {
 
     /**
      * Notify the state machine that rationale has been accepted. It must be called
-     * when users accepts rationale (ex. when user taps Ok in rationale dialog).
+     * when user accepts rationale (ex. when user taps Ok in rationale dialog).
      */
     public void acceptRationale() {
         call();
@@ -449,7 +492,7 @@ public class EzPermission {
 
     /**
      * Notify the state machine that rationale has been rejected. It must be called
-     * when users rejects rationale (ex. when user taps Cancel in rationale dialog).
+     * when user rejects rationale (ex. when user taps Cancel in rationale dialog).
      */
     public void rejectRationale() {
         mFsm.event(Fsm.Event.REJECT);
@@ -459,30 +502,66 @@ public class EzPermission {
      * This methods should be called in {@link Activity#onRequestPermissionsResult(int, String[], int[])}.
      */
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if(requestCode == mRequestCode) {
-            if(isGranted(permissions, grantResults, mPermission)) {
-                mFsm.event(Fsm.Event.GRANTED);
-            } else {
-                mFsm.event(Fsm.Event.DENIED);
+        if(requestCode != mRequestCode) {
+            return;
+        }
+
+        boolean allGranted = true;
+        mDeniedPermissions = new ArrayList<>(mPermissions.size());
+        for(String permission : mPermissions) {
+            if(!isGranted(permissions, grantResults, permission)) {
+                allGranted = false;
+                mDeniedPermissions.add(permission);
             }
+        }
+        
+        if(allGranted) {
+            mFsm.event(Fsm.Event.GRANTED);
+        } else {
+            mFsm.event(Fsm.Event.DENIED);
         }
     }
 
-    public void setModalRationale(boolean modal) {
-        mIsRationaleModal = modal;
+    /**
+     * Get list of denied permissions. Result is valid only after {@link #onRequestPermissionsResult(int, String[], int[])}
+     * is called. This method can be used in denied permissions callbacks.
+     *
+     * @return Unmodifiable list of denied permissions.
+     */
+    public List<String> getDeniedPermissions() {
+        return  Collections.unmodifiableList(mDeniedPermissions);
     }
 
+    /**
+     * Toggle between modal and modeless rationale. This flag will change
+     * internal state machine flow.
+     *
+     * @param isModal True if rationale is modal (dialog), false if modeless ("full-screen")
+     */
+    public void setIsModalRationale(boolean isModal) {
+        mIsRationaleModal = isModal;
+    }
+
+    /**
+     * Get current state machine state. This method is used only for tests.
+     *
+     * @return Current staet machine state
+     */
     Fsm.State getCurrentState() {
         return mFsm.getCurrentState();
     }
 
-    private String createStateExtraKey(String keyPrefix) {
-        return String.format("%s:%s", keyPrefix, mPermission);
+    private static String createExtraKey(String keyPrefix, String[] permissions) {
+        StringBuilder builder = new StringBuilder();
+        for(String permission : permissions) {
+            builder.append(permission).append(';');
+        }
+        return String.format("%s:%s", keyPrefix, builder);
     }
 
     /**
-     *  Launch system settings with application details configuration. This method
-     *  should be used to allow user set app permissions.
+     *  Launch system settings with application configuration. This method
+     *  should be used to allow user to set app permissions.
      *
      * @param context Context used to launch settings activity
      */
@@ -497,62 +576,61 @@ public class EzPermission {
         context.startActivity(i);
     }
 
-    private static boolean hasPermission(Context context, String permission) {
-        int result = ContextCompat.checkSelfPermission(context, permission);
-        return result == PackageManager.PERMISSION_GRANTED;
+    /**
+     * Checks if all permissions are granted.
+     *
+     * @param context Context used to access permissions API
+     * @param permissions Collection of required permissions
+     * @return true if all permissions are granted, false if any permission is denied
+     */
+    private static boolean hasPermissions(final Context context, final Collection<String> permissions) {
+        return all(permissions, new Predicate<String>() {
+            @Override
+            public boolean test(String permission) {
+                int result = ContextCompat.checkSelfPermission(context, permission);
+                return result == PackageManager.PERMISSION_GRANTED;
+            }
+        });
     }
 
-    private static boolean isGranted(String[] permissions, int[] grantResults, String permission) {
-        if(permission == null || permissions == null || grantResults == null) {
+    /**
+     * This method is used to evaluate permissions result. It scans permissions result to see if
+     * requested permission has been granted.
+     *
+     * @param permissions List of requested permissions
+     * @param grantResults Grant results that match requested permissions
+     * @param requiredPermission Permission to check
+     * @return true if permission is granted, false if not or permission was not requested
+     */
+    private static boolean isGranted(String[] permissions, int[] grantResults, String requiredPermission) {
+        if(requiredPermission == null || permissions == null || grantResults == null) {
             throw new IllegalArgumentException("Permission, requested permissions and grant result cannot be null");
         }
+
         if(permissions.length != grantResults.length) {
             throw new IllegalArgumentException("Permissions and grant result size differ");
         }
+
         for(int i = 0; i < permissions.length; i++) {
-            if(permission.equals(permissions[i])) {
-                return grantResults[i] == PackageManager.PERMISSION_GRANTED;
-            }
+            boolean isRequired = requiredPermission.equals(permissions[i]);
+            boolean isGranted = grantResults[i] == PackageManager.PERMISSION_GRANTED;
+            if(isRequired && isGranted) return true;
         }
+
         return false;
     }
 
-    private static Callable<Boolean> not(final Callable<Boolean> call) {
-        return new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return !call.call();
-            }
-        };
+    private static <T> Boolean all(Collection<T> collection, Predicate<T> predicate) {
+        for(T item : collection) {
+            if(!predicate.test(item)) return false;
+        }
+        return true;
     }
 
-    @SafeVarargs
-    private static Callable<Boolean> and(final Callable<Boolean>... calls) {
-        return new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                for(Callable<Boolean> call : calls) {
-                    if(!call.call()) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-        };
-    }
-
-    @SafeVarargs
-    private static Callable<Boolean> or(final Callable<Boolean>... calls) {
-        return new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                for(Callable<Boolean> call : calls) {
-                    if(call.call()) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-        };
+    private static <T> Boolean any(Collection<T> collection, Predicate<T> predicate) {
+        for(T item : collection) {
+            if(predicate.test(item)) return true;
+        }
+        return false;
     }
 }

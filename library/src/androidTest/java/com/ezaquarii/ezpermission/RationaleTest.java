@@ -51,7 +51,7 @@ public class RationaleTest extends Fixture {
 
     @Test
     public void cannotRejectNonModalRationale() {
-        mHelper.setModalRationale(false);
+        mHelper.setIsModalRationale(false);
         mHelper.rejectRationale();
         assertEquals(EzPermission.Fsm.State.RATIONALE, mHelper.getCurrentState());
         verify(mOnRequest, times(0)).run();

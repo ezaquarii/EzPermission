@@ -31,8 +31,8 @@ public class DeniedTest extends Fixture {
         mHelper.call();
         assertEquals(EzPermission.Fsm.State.REQUESTING, mHelper.getCurrentState());
         mHelper.onRequestPermissionsResult(REQUEST_CODE,
-                new String[] {PERMISSION},
-                new int[] {PackageManager.PERMISSION_DENIED});
+                PERMISSIONS,
+                new int[] {PackageManager.PERMISSION_DENIED, PackageManager.PERMISSION_DENIED});
         assertEquals(EzPermission.Fsm.State.DENIED, mHelper.getCurrentState());
     }
 

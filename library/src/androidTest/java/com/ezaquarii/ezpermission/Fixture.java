@@ -24,7 +24,10 @@ import java.util.concurrent.Callable;
 
 public class Fixture {
 
-    public static final String PERMISSION = "permission";
+    public static final String PERMISSION_A = "permission_a";
+    public static final String PERMISSION_B = "permission_b";
+    public static final String[] PERMISSIONS = new String[] {PERMISSION_A, PERMISSION_B};
+
     public static final int REQUEST_CODE = 1;
 
     EzPermission mHelper;
@@ -44,7 +47,7 @@ public class Fixture {
                 null,
                 REQUEST_CODE,
                 modal,
-                PERMISSION,
+                PERMISSIONS,
                 mOnGranted,
                 mOnRationale,
                 mOnDenied,

@@ -45,8 +45,8 @@ public class ModalRequestingTest extends Fixture {
     public void denied() throws Exception {
         when(mCanShowRationale.call()).thenReturn(true);
         mHelper.onRequestPermissionsResult(REQUEST_CODE,
-                new String[] { PERMISSION },
-                new int[] {PackageManager.PERMISSION_DENIED} );
+                PERMISSIONS,
+                new int[] {PackageManager.PERMISSION_DENIED, PackageManager.PERMISSION_DENIED} );
         assertEquals(EzPermission.Fsm.State.START, mHelper.getCurrentState());
         verify(mOnDenied, times(1)).run();
         verify(mOnDeniedPermananetly, never()).run();
@@ -57,8 +57,8 @@ public class ModalRequestingTest extends Fixture {
     public void deniedWithModalRationale() throws Exception {
         when(mCanShowRationale.call()).thenReturn(true);
         mHelper.onRequestPermissionsResult(REQUEST_CODE,
-                new String[] { PERMISSION },
-                new int[] {PackageManager.PERMISSION_DENIED} );
+                PERMISSIONS,
+                new int[] {PackageManager.PERMISSION_DENIED, PackageManager.PERMISSION_DENIED} );
         assertEquals(EzPermission.Fsm.State.START, mHelper.getCurrentState());
         verify(mOnDenied, times(1)).run();
     }

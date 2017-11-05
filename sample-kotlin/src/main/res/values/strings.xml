@@ -4,10 +4,11 @@
     <string name="audio_rationale">Here I tell you how badly I need the permission, bacause is it so important for a great experience.</string>
     <string name="audio_rationale_denied_permanently">Here I tell you how badly I need the permission, bacause is it so important for a great experience. An you must open settings to turn it on.</string>
 
-    <string name="camera_rationale_default">You need to grant permission to use Camera</string>
-    <string name="camera_rationale_with_retry_instruction">You need to grant permission to use Camera.\nTap me to try again.</string>
+    <string name="camera_rationale_default">You need to grant permissions to use Camera and Storage</string>
+    <string name="camera_rationale_with_retry_instruction">You need to grant permissions to use Camera and Storage.\nTap me to try again.</string>
 
-    <string name="camera_permission_denied_permanently">You deined permission to access Camera.\nTap me to open app Settings, where you can enable camera permission.</string>
-    <string name="camera_permission_granted">Camera permission granted - camera preview is available</string>
+    <string name="camera_permission_denied_permanently">You denied permission to access Camera.
+         or Storage\nTap me to open app Settings, where you can enable required permission.</string>
+    <string name="camera_permission_granted">Camera and Storage permission granted - camera preview is available and you can save photos</string>
 
 </resources>
