@@ -26,8 +26,16 @@ intended code when permission is available.
 
 # Limitations
 
-1. -Handles only 1 permission at a time- it does from v1.1.0
-2. focused on permission handling logic - doesn't contain any UI code
+This library is focused on permission handling logic and it doesn't
+contain any UI code.
+
+# Versioning scheme
+
+`MAJOR . FEATURE . BUGFIX`
+
+* `MAJOR` - hardwired to 1, as usual in software versioning :)
+* `FEATURE` - increased for new features
+* `BUGFIX` - increased for bugfixes only
 
 # Integration
 
@@ -46,7 +54,7 @@ Add my private bintray repository in your root `build.gradle`:
     
 In module `build.gradle`, add a dependency:
     
-    compile ('com.ezaquarii:ezpermission:1.1.0') {
+    compile ('com.ezaquarii:ezpermission:1.2.0') {
         exclude group: 'com.android.support'
     }
 
@@ -127,7 +135,7 @@ changes (reveal rationale, launch alerts, etc).
 
 # Licence
 
-    Copyright (C) EzPermission by Krzysztof Narkiewicz (hello@ezaquarii.com)
+    Copyright (C) 2017 EzPermission by Krzysztof Narkiewicz (hello@ezaquarii.com)
     
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

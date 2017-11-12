@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.2.0 (2017-11-12)
+
+* `public static boolean hasPermissions(Collection<String> perms)` helper
+
 ### 1.1.0 (2017-11-04)
 
 * Implemented support for multiple permissions

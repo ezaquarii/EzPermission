@@ -583,7 +583,7 @@ public class EzPermission {
      * @param permissions Collection of required permissions
      * @return true if all permissions are granted, false if any permission is denied
      */
-    private static boolean hasPermissions(final Context context, final Collection<String> permissions) {
+    public static boolean hasPermissions(final Context context, final Collection<String> permissions) {
         return all(permissions, new Predicate<String>() {
             @Override
             public boolean test(String permission) {
