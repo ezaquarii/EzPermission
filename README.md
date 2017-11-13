@@ -70,13 +70,12 @@ camera preview occupies full screen.
             @JvmField val REQUEST_CAMERA_PERMISSION = 1000;
         }
 
-        private val mInitCamera = EzPermission(this, REQUEST_CAMERA_PERMISSION, false,
-                arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                { onCameraGranted() },
-                { onCameraRationale() },
-                { onCameraDenied() },
-                { onCameraDeniedPermanently() }
-        );
+        private val mInitCamera = EzPermission.of(this, REQUEST_CAMERA_PERMISSION, arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE))
+                .onGranted{ onCameraGranted() }
+                .onRationale{ onCameraRationale() }
+                .onDenied{ onCameraDenied() }
+                .onDeniedPermanantly{ onCameraDeniedPermanently() }
+                .build()
         
         override fun onStart() {
             super.onStart()
@@ -100,12 +99,12 @@ With `EzPermission` this is... well... easy.
             @JvmField val REQUEST_AUDIO_PERMISSION = 2000;
         }
     
-        private val mRecordAudio = EzPermission(this, REQUEST_AUDIO_PERMISSION, true,
-                arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                { onAudioGranted() },
-                { onAudioRationale() },
-                { onAudioPermissionDenied() },
-                { onAudioPermissionDeniedPermanently() })
+        private val mRecordAudio = EzPermission.of(this, REQUEST_AUDIO_PERMISSION, arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE))
+                .onGranted{ onAudioGranted() }
+                .onRationale{ onAudioRationale() }
+                .onDenied{ onAudioPermissionDenied() }
+                .onDeniedPermanantly{ onAudioPermissionDeniedPermanently() }
+                .build()
                 
         // on click handler, attached to some "record" button        
         fun onClickedRecordAudio(v: View) {

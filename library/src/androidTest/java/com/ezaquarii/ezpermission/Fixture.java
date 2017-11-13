@@ -14,6 +14,8 @@
 
 package com.ezaquarii.ezpermission;
 
+import android.app.Activity;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.mockito.Mock;
@@ -43,17 +45,15 @@ public class Fixture {
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     public void initFixture(boolean modal) {
-        mHelper = new EzPermission(
-                null,
-                REQUEST_CODE,
-                modal,
-                PERMISSIONS,
-                mOnGranted,
-                mOnRationale,
-                mOnDenied,
-                mOnDeniedPermananetly,
-                mOnRequest,
-                mCanShowRationale,
-                mIsPermissionGranted);
+        mHelper = EzPermission.of(REQUEST_CODE, PERMISSIONS)
+                .isModal(modal)
+                .onGranted(mOnGranted)
+                .onRationale(mOnRationale)
+                .onDenied(mOnDenied)
+                .onDeniedPermanantly(mOnDeniedPermananetly)
+                .onRequest(mOnRequest)
+                .canShowRationale(mCanShowRationale)
+                .isPermissionGranted(mIsPermissionGranted)
+                .build();
     }
 }

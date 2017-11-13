@@ -22,6 +22,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
@@ -76,6 +77,97 @@ public class EzPermission {
     private static final String TAG = EzPermission.class.getSimpleName();
     private static final String EXTRA_INSTANCE_STATE_DEBUG = EzPermission.class.getName() + ".DEGUG";
     private static final String EXTRA_INSTANCE_STATE_FSM_STATE = EzPermission.class.getName() + ".FSM_STATE";
+
+    public static class Builder {
+
+        private Activity mActivity = null;
+        private Fragment mFragment = null;
+        private String[] mPermissions = null;
+        private int mRequestCode = 0;
+        private boolean mIsModal = false;
+        private Runnable mOnGranted = null;
+        private Runnable mOnRequest = null;
+        private Runnable mOnRationale = null;
+        private Runnable mOnDenied = null;
+        private Runnable mOnDeniedPermanently = null;
+        private Callable<Boolean> mCanShowRationale = null;
+        private Callable<Boolean> mIsPermissionGranted = null;
+
+        Builder(Activity activity, int requestCode, String[] permissions) {
+            mActivity = activity;
+            mRequestCode = requestCode;
+            mPermissions = permissions;
+        }
+
+        Builder(Fragment fragment, int requestCode, String[] permissions) {
+            mFragment = fragment;
+            mRequestCode = requestCode;
+            mPermissions = permissions;
+        }
+
+        public Builder isModal(boolean isModal) {
+            mIsModal = isModal;
+            return this;
+        }
+
+        public Builder onRequest(Runnable onRequest) {
+            mOnRequest = onRequest;
+            return this;
+        }
+
+        public Builder onRationale(Runnable onRationale) {
+            mOnRationale = onRationale;
+            return this;
+        }
+
+        public Builder onGranted(Runnable onGranted) {
+            mOnGranted = onGranted;
+            return this;
+        }
+
+        public Builder onDenied(Runnable onDenied) {
+            mOnDenied = onDenied;
+            return this;
+        }
+
+        public Builder onDeniedPermanantly(Runnable onDeniedPermanantly) {
+            mOnDeniedPermanently = onDeniedPermanantly;
+            return this;
+        }
+
+        public Builder canShowRationale(Callable<Boolean> canShowRationale) {
+            mCanShowRationale = canShowRationale;
+            return this;
+        }
+
+        public Builder isPermissionGranted(Callable<Boolean> isPermissionGranted) {
+            mIsPermissionGranted = isPermissionGranted;
+            return this;
+        }
+
+        public EzPermission build() {
+            boolean noContext = mActivity == null && mFragment == null;
+            if(noContext) {
+                if(mOnRequest == null || mIsPermissionGranted == null || mCanShowRationale == null) {
+                    throw new IllegalArgumentException("You must provide activity or fragment or onRequest, isPermissionGranted and canShowRationale.");
+                }
+            }
+
+            return new EzPermission(mActivity,
+                                    mFragment,
+                                    mRequestCode,
+                                    mIsModal,
+                                    mPermissions,
+                                    mOnGranted,
+                                    mOnRationale,
+                                    mOnDenied,
+                                    mOnDeniedPermanently,
+                                    mOnRequest,
+                                    mCanShowRationale,
+                                    mIsPermissionGranted);
+        }
+
+    }
 
     private interface Predicate<T> {
         boolean test(T item);
@@ -286,6 +378,7 @@ public class EzPermission {
         }
     }
 
+    private Fragment mFragment;
     private Activity mActivity;
     private int mRequestCode;
     private List<String> mPermissions;
@@ -300,7 +393,12 @@ public class EzPermission {
     private Callable<Boolean> mIsPermissionGrantedGuard = new Callable<Boolean>() {
         @Override
         public Boolean call() throws Exception {
-            return hasPermissions(mActivity, mPermissions);
+            final Context context = getContext();
+            if(context != null) {
+                return hasPermissions(context, mPermissions);
+            } else {
+                return false;
+            }
         }
     };
 
@@ -330,36 +428,36 @@ public class EzPermission {
         @Override
         public void run() {
             String[] permissionsArray = mPermissions.toArray(new String[mPermissions.size()]);
-            ActivityCompat.requestPermissions(mActivity, permissionsArray, mRequestCode);
+            if(mActivity != null) {
+                ActivityCompat.requestPermissions(mActivity, permissionsArray, mRequestCode);
+            } else if(mFragment != null) {
+                mFragment.requestPermissions(permissionsArray, mRequestCode);
+            }
         }
     };
 
     private Fsm mFsm;
-
     private String mExtraInstanceDebug;
     private String mExtraInstanceFsmState;
 
-    /**
-     * Create permissions helper.
-     *
-     * @param activity Activity used to request for a permissions
-     * @param requestCode Expected request code; helper will not handle results with invalid request code
-     * @param permissions Permission to ask for
-     * @param isRationaleModal True if rationale is modal (like a dialog), false otherwise; consult state machine diagram to see behavioral change
-     * @param onGranted Called when permissions is granted
-     * @param onRationale Called when rationale should be shown
-     * @param onDenied Called when permissions is denied; permissions can be requested again
-     * @param onDeniedPermanantly Called when permissions is denied permanently
-     */
-    public EzPermission(Activity activity, int requestCode, boolean isRationaleModal, String[] permissions, Runnable onGranted, Runnable onRationale, Runnable onDenied, Runnable onDeniedPermanantly) {
-        this(activity, requestCode, isRationaleModal, permissions, onGranted, onRationale, onDenied, onDeniedPermanantly, null, null, null);
+    public static Builder of(int requestCode, String[] permissions) {
+        return new Builder((Activity)null, requestCode, permissions);
+    }
+
+    public static Builder of(Activity activity, int requestCode, String[] permissions) {
+        return new Builder(activity, requestCode, permissions);
+    }
+
+    public static Builder of(Fragment fragment, int requestCode, String[] permissions) {
+        return new Builder(fragment, requestCode, permissions);
     }
 
     /**
      * Create permissions helper with custom permissions request routine and custom
      * rationale check. This is indented to be used in test only.
      *
-     * @param activity Activity used to request for a permissions
+     * @param activity Activity used to request for a permissions (if non-null, fragment must be null)
+     * @param fragment Fragment used to request for a permissions (if non-null, activity must be null)
      * @param requestCode Expected request code; helper will not handle results with invalid request code
      * @param permissions Permission to ask for
      * @param isRationaleModal True if rationale is modal (like a dialog), false otherwise; consult state machine diagram to see behavioral change
@@ -371,7 +469,8 @@ public class EzPermission {
      * @param canShowRationale Should return true if rationale should be shown, false otherwise; when null, default guard will be used
      * @param isPermissionGranted Should return true if permissions is granted, false otherwise; when null, default guard will be used
      */
-    public EzPermission(Activity activity,
+    private EzPermission(Activity activity,
+                        Fragment fragment,
                         int requestCode,
                         boolean isRationaleModal,
                         String[] permissions,
@@ -396,7 +495,12 @@ public class EzPermission {
             mIsPermissionGrantedGuard = isPermissionGranted;
         }
 
+        if(activity != null && fragment != null) {
+            throw new IllegalArgumentException("Only one fragment or activity is permitted");
+        }
         mActivity = activity;
+        mFragment = fragment;
+
         mRequestCode = requestCode;
         mPermissions = Arrays.asList(permissions);
         mIsRationaleModal = isRationaleModal;
@@ -549,6 +653,22 @@ public class EzPermission {
      */
     Fsm.State getCurrentState() {
         return mFsm.getCurrentState();
+    }
+
+    /**
+     * Get context from provided {@link Activity} or {@link Fragment}. If fragment is detached,
+     * context is null.
+     *
+     * @return Context or null, if context is not available
+     */
+    public Context getContext() {
+        if(mActivity != null) {
+            return mActivity;
+        } else if(mFragment != null) {
+            return mFragment.getContext();
+        } else {
+            return null;
+        }
     }
 
     private static String createExtraKey(String keyPrefix, String[] permissions) {
